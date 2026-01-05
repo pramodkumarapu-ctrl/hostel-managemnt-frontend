@@ -9,7 +9,7 @@ import {
   LuMapPin,
   LuPhone,
   LuX,
-  LuLayoutGrid // Icon for managing floors
+  LuLayoutGrid
 } from 'react-icons/lu';
 import { useRouter } from 'next/navigation';
 import api from '../lib/api';
@@ -30,10 +30,11 @@ export default function HostelsPage() {
   const router = useRouter();
   const headers = { Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('token') : ''}` };
 
+  // Load hostels safely
   const loadHostels = async () => {
     try {
       const res = await api.get('/hostels', { headers });
-      setHostels(res.data || []);
+      setHostels(Array.isArray(res.data.data) ? res.data.data : []);
     } catch {
       router.push('/login');
     } finally {
@@ -43,6 +44,7 @@ export default function HostelsPage() {
 
   useEffect(() => { loadHostels(); }, []);
 
+  // Save or update hostel
   const saveHostel = async () => {
     if (!form.name || !form.address) return alert('Name and Address are required');
     try {
@@ -63,6 +65,7 @@ export default function HostelsPage() {
     }
   };
 
+  // Delete hostel
   const deleteHostel = async (id: string) => {
     if (!confirm('Delete this hostel? This will affect all associated floors and rooms.')) return;
     try {
@@ -73,6 +76,7 @@ export default function HostelsPage() {
     }
   };
 
+  // Loading state
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
       <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -115,7 +119,7 @@ export default function HostelsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {hostels.map((h) => (
+                {Array.isArray(hostels) && hostels.map((h) => (
                   <tr key={h.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-5">
                       <div className="font-bold text-slate-800 text-sm">{h.name}</div>
@@ -132,14 +136,12 @@ export default function HostelsPage() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex justify-end items-center gap-2">
-                        {/* CONNECTING BUTTON: GO TO FLOORS */}
                         <button 
                           onClick={() => router.push(`/floors?hostelId=${h.id}`)}
                           className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase hover:bg-indigo-100 transition-colors"
                         >
                           <LuLayoutGrid size={14}/> Floors
                         </button>
-
                         <button 
                           onClick={() => { setEditing(h); setForm({name: h.name, address: h.address, phone: h.phone}); setOpen(true); }} 
                           className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
@@ -162,7 +164,7 @@ export default function HostelsPage() {
         </div>
       </div>
 
-      {/* MODAL (Unchanged but ensuring form cleanup) */}
+      {/* MODAL */}
       {open && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-[2rem] shadow-2xl overflow-hidden">
